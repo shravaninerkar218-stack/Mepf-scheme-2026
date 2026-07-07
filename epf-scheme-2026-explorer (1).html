@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPF Scheme 2026 — Explorer</title>
+<style>
+  :root{
+    --ink:#1b2432;
+    --paper:#f6f3ec;
+    --panel:#ffffff;
+    --rule:#d8cdb8;
+    --brass:#8a6d3b;
+    --brass-deep:#5f4a26;
+    --seal:#8e2f2f;
+    --muted:#6b6459;
+    --serif: "Source Serif Pro","Georgia",serif;
+    --sans: "Inter","Segoe UI",Arial,sans-serif;
+    --mono: "JetBrains Mono","Courier New",monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
+  a{color:inherit;}
+
+  /* Header / masthead */
+  .masthead{
+    border-bottom:3px double var(--brass-deep);
+    background:linear-gradient(180deg,#fbf9f3,var(--paper));
+    padding:22px 28px 16px;
+    position:sticky;top:0;z-index:20;
+  }
+  .masthead-inner{max-width:1180px;margin:0 auto;display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand .seal{
+    width:44px;height:44px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #a84040, var(--seal));
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif);color:#fff2e2;font-weight:700;font-size:15px;
+    box-shadow:0 0 0 2px var(--paper),0 0 0 3px var(--brass-deep);
+    flex:none;
+  }
+  .brand h1{font-family:var(--serif);font-weight:600;font-size:26px;margin:0;letter-spacing:.2px;}
+  .brand .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+  .gaz-ref{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:right;line-height:1.5;}
+
+  .search-row{max-width:1180px;margin:16px auto 0;display:flex;gap:10px;}
+  .search-row input{
+    flex:1;padding:11px 14px;border:1px solid var(--rule);border-radius:2px;
+    background:var(--panel);font-family:var(--sans);font-size:14px;color:var(--ink);
+  }
+  .search-row input:focus{outline:2px solid var(--brass);outline-offset:1px;}
+
+  /* layout */
+  .wrap{max-width:1180px;margin:0 auto;padding:28px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* Dashboard grid of sections */
+  .section-index{font-family:var(--serif);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin:0 0 14px;border-bottom:1px solid var(--rule);padding-bottom:10px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+  .card{
+    background:var(--panel);border:1px solid var(--rule);border-radius:3px;
+    padding:20px 20px 18px;cursor:pointer;position:relative;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(40,30,10,.35);border-color:var(--brass);}
+  .card:focus-visible{outline:2px solid var(--brass);outline-offset:2px;}
+  .card .num{
+    font-family:var(--serif);font-size:12px;color:var(--brass-deep);letter-spacing:.08em;
+  }
+  .card h3{font-family:var(--serif);margin:0;font-size:19px;line-height:1.3;}
+  .card p{margin:0;font-size:13px;color:var(--muted);line-height:1.5;}
+  .card .meta{margin-top:auto;padding-top:8px;font-size:11.5px;color:var(--brass-deep);font-family:var(--mono);display:flex;justify-content:space-between;}
+  .card .arrow{position:absolute;top:16px;right:16px;color:var(--rule);font-size:18px;}
+
+  .forms-card{border-style:dashed;}
+
+  /* Detail view */
+  .backlink{
+    display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--brass-deep);
+    background:none;border:none;cursor:pointer;padding:0;margin-bottom:18px;font-family:var(--sans);
+  }
+  .backlink:hover{text-decoration:underline;}
+
+  .detail-head{border-bottom:1px solid var(--rule);padding-bottom:18px;margin-bottom:22px;}
+  .detail-head .num{font-family:var(--serif);color:var(--brass-deep);font-size:13px;letter-spacing:.1em;text-transform:uppercase;}
+  .detail-head h2{font-family:var(--serif);font-size:32px;margin:6px 0 12px;line-height:1.2;}
+  .detail-head .lede{font-size:15.5px;color:#3a4150;line-height:1.65;max-width:75ch;}
+  .detail-head .stat-row{display:flex;gap:22px;margin-top:14px;flex-wrap:wrap;}
+  .stat{font-family:var(--mono);font-size:12px;color:var(--muted);}
+  .stat b{color:var(--ink);font-family:var(--sans);font-weight:700;}
+
+  .rule-list{display:flex;flex-direction:column;gap:2px;}
+  .rule{
+    background:var(--panel);border:1px solid var(--rule);border-top:none;
+    padding:16px 18px;
+  }
+  .rule:first-child{border-top:1px solid var(--rule);border-radius:3px 3px 0 0;}
+  .rule:last-child{border-radius:0 0 3px 3px;}
+  .rule-head{display:flex;gap:12px;align-items:baseline;cursor:pointer;}
+  .rule-head .rnum{font-family:var(--serif);font-weight:700;color:var(--brass-deep);min-width:28px;}
+  .rule-head h4{margin:0;font-size:15.5px;font-weight:600;flex:1;}
+  .rule-head .chev{color:var(--rule);transition:transform .15s ease;}
+  .rule.open .chev{transform:rotate(90deg);}
+  .rule-body{max-height:0;overflow:hidden;transition:max-height .2s ease;}
+  .rule.open .rule-body{max-height:400px;}
+  .rule-body p{font-size:13.8px;color:#3a4150;line-height:1.6;margin:12px 0 2px 40px;max-width:70ch;}
+
+  .forms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+  .form-card{background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:16px 18px;}
+  .form-card .ftag{font-family:var(--mono);font-size:11px;color:var(--brass-deep);}
+  .form-card h4{font-family:var(--serif);margin:6px 0 6px;font-size:16px;}
+  .form-card p{margin:0;font-size:13px;color:var(--muted);line-height:1.5;}
+
+  .empty-state{padding:60px 0;text-align:center;color:var(--muted);font-family:var(--serif);font-size:16px;}
+
+  footer{max-width:1180px;margin:0 auto;padding:24px 28px 40px;color:var(--muted);font-size:11.5px;font-family:var(--mono);border-top:1px solid var(--rule);}
+
+  @media (max-width:600px){
+    .brand h1{font-size:20px;}
+    .gaz-ref{display:none;}
+    .detail-head h2{font-size:24px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <div class="seal">EPF</div>
+      <div>
+        <div class="eyebrow">Ministry of Labour &amp; Employment</div>
+        <h1>Employees' Provident Funds Scheme, 2026 — Explorer</h1>
+      </div>
+    </div>
+    <div class="gaz-ref">Gazette of India, Extraordinary<br>Part II — Section 3(i), No. 473<br>Notified 29 June 2026</div>
+  </div>
+  <div class="search-row">
+    <input id="searchBox" type="text" placeholder="Search chapters and paragraphs — e.g. nomination, withdrawal, exemption, interest…" autocomplete="off">
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="view active">
+    <p class="section-index">Sections of the Scheme</p>
+    <div class="grid" id="chapterGrid"></div>
+  </section>
+
+  <!-- DETAIL -->
+  <section id="detail" class="view"></section>
+
+</main>
+
+<footer>
+  Source: The Gazette of India, S.O. 525(E), dated 29 June 2026 — Employees' Provident Funds Scheme, 2026, issued under Section 15(1)(a) of the Social Security Code, 2020.
+  This explorer restates each provision in plain language for quick reference; always consult the official Gazette text for legal purposes.
+</footer>
+
+<script>
+const DATA = [
+  {
+    id: 1, roman:"I", title:"Preliminary",
+    summary:"The opening chapter names the Scheme, fixes when it takes effect, and sets out who it covers. It also defines the vocabulary used throughout — terms like 'member', 'wages', 'excluded employee' and 'international worker' — so every later chapter can be read consistently.",
+    rules:[
+      {n:1,t:"Short title, commencement and application",d:"Names the Scheme the 'Employees' Provident Funds Scheme, 2026', fixes its start date as the date of Gazette publication, and applies it to every establishment covered by Chapter III of the Social Security Code, 2020, including government-owned establishments meeting the prescribed employee threshold."},
+      {n:2,t:"Definitions",d:"Defines the key terms used across the Scheme — authorised signatory, board of trustees, child, Code, Commissioner, excluded employee, exempted establishment, financial year, Fund, international worker, member, principal employer, superannuated Act, Universal Account Number (UAN), and more."}
+    ]
+  },
+  {
+    id:2, roman:"II", title:"Officers of Central Board",
+    summary:"This chapter fixes the administrative machinery that runs the Fund: the powers of the Central Provident Fund Commissioner, how regional and local offices are set up, how staff are appointed, and the budgetary limits within which officers may spend.",
+    rules:[
+      {n:3,t:"Central PF Commissioner, Financial Adviser and Chief Accounts Officer",d:"Bars the Commissioner, the Financial Adviser and the Chief Accounts Officer from undertaking work unconnected with their office without the Central Government's prior approval."},
+      {n:4,t:"Regional and local offices",d:"Empowers the Central Board to set up as many regional and local offices as needed to run the Scheme, and to define their functions and duties."},
+      {n:5,t:"Appointment of officers and employees of the Central Board",d:"Authorises the Central Board to appoint officers and staff up to the level of Joint Secretary to the Government of India."},
+      {n:6,t:"Information of appointment to Central Board",d:"Requires that appointments of Regional PF Commissioners and above be reported to the Central Board's Chairman and placed before the Board at its next meeting."},
+      {n:7,t:"Administrative and financial powers of Commissioner",d:"Lets the Commissioner sanction contingent expenditure, goods, services and purchases within budget allocations approved by the Central Board, and lets the Board delegate further financial powers over time."},
+      {n:8,t:"Staff Provident Fund and other benefits",d:"Continues the 'Staff Provident Fund' and the 'Pension-cum-Gratuity Fund' set up for the Central Board's own officers and employees under the Provident Funds Act, 1925."}
+    ]
+  },
+  {
+    id:3, roman:"III", title:"Membership",
+    summary:"Covers who becomes a member of the Fund, how membership continues across jobs, and how disputes about whether someone qualifies as a member are resolved.",
+    rules:[
+      {n:9,t:"Membership of the fund",d:"Sets out which employees automatically become members of the Fund from the date they join a covered establishment, and lists exclusions such as certain international workers whose home country already has a social security agreement with India."},
+      {n:10,t:"Retention of membership",d:"A member stays a member of the Scheme even through breaks in service or changes of employer, until they formally withdraw their accumulated balance under the withdrawal rules."},
+      {n:11,t:"Resolution of questions about membership",d:"Gives the Commissioner power to decide disputes about whether a person is or was an employee, or is entitled to become a member, subject to appeal."}
+    ]
+  },
+  {
+    id:4, roman:"IV", title:"Exemption",
+    summary:"Lays out the route by which an employer or employee can be excused from some or all of the Scheme's provisions — usually because the establishment already runs its own, at-least-as-good provident fund — along with the conditions, trustee structure, and process for extending, ending, or transferring out of an exemption.",
+    rules:[
+      {n:12,t:"Exemption of employee or class of employees",d:"Lets the appropriate Government exempt an employee or class of employees from the Scheme on application in Form-I, subject to conditions specified in the exemption order."},
+      {n:13,t:"Terms and conditions after exemption",d:"Requires an exempted employer to set up a board of trustees and to provide benefits at least as favourable as under the Scheme, among other post-exemption obligations."},
+      {n:14,t:"Composition of board of trustees",d:"Prescribes how the board of trustees of an exempted establishment must be constituted, including employer and employee representation."},
+      {n:15,t:"Extension of exemption",d:"An exemption order initially runs for a fixed period and may be extended if the establishment continues to meet the conditions."},
+      {n:16,t:"Cessation and surrender of exemption",d:"Describes how an exemption can be withdrawn by the Government or voluntarily surrendered by the establishment, and what happens to accumulated funds afterward."},
+      {n:17,t:"Transfer of accumulation from existing provident fund",d:"Governs how balances held in an establishment's own (pre-existing) provident fund are transferred into the statutory Fund when exemption ends or membership changes."}
+    ]
+  },
+  {
+    id:5, roman:"V", title:"Contributions and Charges",
+    summary:"The financial heart of the Scheme: how much employers and employees must contribute, who is responsible for paying, how a member's share is recovered from wages, and the penalties for employers who default.",
+    rules:[
+      {n:18,t:"Contributions",d:"Fixes the contribution payable each month by both employer and employee as a percentage of wages, and how the two shares are calculated."},
+      {n:19,t:"Additional voluntary contributions",d:"Allows a member to voluntarily contribute more than the statutory minimum, subject to conditions."},
+      {n:20,t:"Responsibility for payment of contribution",d:"Places the initial responsibility for paying both the employer's and the employee's share on the employer, who later recovers the employee's share from wages."},
+      {n:21,t:"Employer's share not to be deducted from members",d:"Prohibits an employer from recovering its own contribution from a member's wages, regardless of any contrary agreement."},
+      {n:22,t:"Recovery of member's share of Contributions",d:"Sets out how and when an employer may deduct a member's contribution from wages before payment."},
+      {n:23,t:"Levy and Recovery of damages for default",d:"Empowers the Commissioner to levy and recover damages from an employer who defaults on payment of contributions or administrative charges."}
+    ]
+  },
+  {
+    id:6, roman:"VI", title:"Responsibilities, Forms & Returns",
+    summary:"Sets out the paperwork obligations that keep the system running — what employers, employees, principal employers and contractors must file, when, and in what form, plus how administrative charges are fixed and annual statements issued to members.",
+    rules:[
+      {n:24,t:"Duties of employers",d:"Requires every employer to send a consolidated return in Form V within fifteen days of the Scheme applying to the establishment, along with other periodic filings."},
+      {n:25,t:"Duties of employee",d:"Requires every eligible employee to furnish the particulars needed for enrolment and to authorise necessary deductions from wages."},
+      {n:26,t:"Employer to furnish particulars of ownership and authorised signatories",d:"Requires employers to file ownership details and to name the persons authorised to sign returns and documents on the establishment's behalf."},
+      {n:27,t:"Duties of principal employer and contractor",d:"Makes the principal employer responsible for ensuring contract workers are registered and covered, with corresponding obligations on contractors."},
+      {n:28,t:"Payment of contributions etc.",d:"Requires the employer to pay contributions before disbursing wages for the relevant period and prescribes the mode and timeline of payment."},
+      {n:29,t:"Fixation of administrative charges or other fee",d:"Explains how administrative charges payable by employers (or exempted establishments) toward running the Fund are fixed."},
+      {n:30,t:"Annual statement of member's account and e-Pass Book",d:"Requires an annual statement of account and electronic pass book to be made available to every member after the close of the financial year."}
+    ]
+  },
+  {
+    id:7, roman:"VII", title:"Maintenance of Accounts",
+    summary:"Describes how the money itself is organised and accounted for — the different ledgers (Current, Administration, Provident Fund and Interest Accounts), how the Fund's money is invested, how interest is credited to individual members, and how the accounts are audited and budgeted.",
+    rules:[
+      {n:31,t:"Current Account",d:"Requires the Commissioner to deposit contributions received from employers into a Current Account before further allocation."},
+      {n:32,t:"Administration Account",d:"Establishes the Central Administration Account, into which administrative charges are credited to fund the Fund's running costs."},
+      {n:33,t:"Provident Fund Account",d:"Establishes the Provident Fund Account into which member and employer contributions are credited for the purposes of the Scheme."},
+      {n:34,t:"Interest Account",d:"Directs that interest, rent and other income earned on the Fund's investments be credited to a dedicated Interest Account."},
+      {n:35,t:"Investment of moneys belonging to Employees' Provident Fund",d:"Governs how the Fund's money must be invested, in line with pattern-of-investment guidelines issued by the Government."},
+      {n:36,t:"Disposal of the fund",d:"Sets out how the Fund (excluding certain reserves) may be applied, subject to the Code and the Scheme."},
+      {n:37,t:"Expenses of administration",d:"Provides that administration expenses are met from the Central Administration Account rather than from members' individual balances."},
+      {n:38,t:"Form and manner of maintenance of accounts",d:"Prescribes the format and method in which the Fund's and Administration Account's books must be kept."},
+      {n:39,t:"Audit",d:"Requires the Fund's accounts, including the Administration Account, to be audited in accordance with prescribed procedure."},
+      {n:40,t:"Budget",d:"Requires the Central PF Commissioner to prepare and submit the Fund's budget each year within a fixed timeline."},
+      {n:41,t:"Accounts of members",d:"Requires an individual account to be opened in the Fund for each member, to which contributions and interest are credited."},
+      {n:42,t:"Interest",d:"Requires the Commissioner to credit interest to every member's account at the rate determined for the year."}
+    ]
+  },
+  {
+    id:8, roman:"VIII", title:"Transfers, Nominations, Payments and Withdrawals",
+    summary:"The chapter members interact with most directly: how a balance moves when someone changes jobs, how to nominate a beneficiary, when partial withdrawals are allowed (housing, illness, marriage, education, etc.), what happens on death or dismissal for misconduct, and the process for filing a final claim.",
+    rules:[
+      {n:43,t:"Transfer of membership",d:"Governs how a member's accumulated balance is transferred when they leave one covered establishment and join another."},
+      {n:44,t:"Nomination",d:"Requires every member to file a nomination through the designated online portal naming who should receive their balance in the event of death."},
+      {n:45,t:"Financing of existing members' Life Insurance Policy",d:"Allows part of a member's accumulation to be used to pay premiums on an existing life insurance policy, subject to conditions."},
+      {n:46,t:"Partial withdrawals from Fund",d:"Lists the circumstances — such as housing, medical treatment, marriage or education of family members — in which the Commissioner may sanction a partial withdrawal on application."},
+      {n:47,t:"Computation of period of membership",d:"Explains how continuous years of membership are calculated for the purpose of eligibility for partial withdrawals and other benefits."},
+      {n:48,t:"Payment of partial withdrawal",d:"Sets out the mode by which a sanctioned partial withdrawal is actually paid to a member."},
+      {n:49,t:"Circumstances in which accumulations in Fund are payable to member",d:"Lists the situations — retirement, retrenchment, permanent emigration, and others — in which a member may withdraw their full accumulation."},
+      {n:50,t:"Accumulations of deceased member to whom payable",d:"Determines who receives a deceased member's balance, following the nomination on file or statutory heirs if none exists."},
+      {n:51,t:"Payment of Accumulations of funds of International Workers",d:"Sets special withdrawal conditions for international workers, often linked to the social security agreement between India and their home country."},
+      {n:52,t:"Payment to person charged with offence of murder",d:"Withholds payment to a person charged with murdering the member (or an equally entitled person) until the criminal proceedings conclude."},
+      {n:53,t:"Payment of Provident Fund",d:"Sets out the procedure and timelines for disbursing a member's provident fund balance once it becomes payable."},
+      {n:54,t:"Filing of claims",d:"Explains how and when a member must file a claim for final settlement on leaving service."},
+      {n:55,t:"Inoperative Account",d:"Defines when a member's account is treated as inoperative — typically after prolonged non-contribution with no claim filed — and how such accounts are handled."}
+    ]
+  },
+  {
+    id:9, roman:"IX", title:"Annual Report",
+    summary:"The closing chapter covers institutional housekeeping — how the Central Board reports on its work each year, how it conducts its own business, how misuse of benefits is dealt with, and the process for writing off irrecoverable losses.",
+    rules:[
+      {n:56,t:"Annual report of Board",d:"Requires the Central Board to prepare an annual report on its activities, to be presented as prescribed."},
+      {n:57,t:"Conduct of business of Central Board",d:"Sets procedural rules for how the Central Board makes orders and conducts its meetings and business."},
+      {n:58,t:"Misuse of benefits",d:"Lets the Central PF Commissioner specify how cases of misuse of Scheme benefits are to be handled."},
+      {n:59,t:"Writing off losses",d:"Allows the Central Board, where satisfied a sum is irrecoverable, to write off amounts of contribution, cess, interest or damages."}
+    ]
+  }
+];
+
+const FORMS = [
+  {tag:"Annexure",title:"Supporting classification lists",d:"Ownership types, primary activity codes and exemption categories referenced by Form II."},
+  {tag:"Form I",title:"Application for exemption",d:"Filed by an employee under paragraph 12(1) to apply for exemption from the Scheme."},
+  {tag:"Form II",title:"Online return for exempted establishments",d:"Filed under paragraph 12(2)(ii) by an exempted establishment, class of establishment, or employee."},
+  {tag:"Form III",title:"Minutes of the board of trustees",d:"Records proceedings of the board of trustees meeting, per paragraph 13(3)."},
+  {tag:"Form V",title:"Consolidated employer return",d:"Filed under paragraph 24(1); doubles as the return under the Employees' Pension Scheme, 2026."},
+  {tag:"Form VI",title:"Ownership return",d:"Filed under paragraph 24(2)(vi) to declare establishment ownership details."},
+  {tag:"Form VII",title:"Electronic challan-cum-return (ECR)",d:"The monthly electronic contribution filing under paragraph 24(2)(ix)."},
+  {tag:"Form VIII",title:"Branch and responsible-person details",d:"Lists an establishment's branches and their responsible officers, per paragraph 26(1)(i)."},
+  {tag:"Form IX",title:"Authorised signatories",d:"Names the people legally authorised to sign on the establishment's behalf, per paragraph 26(1)(ii)."},
+  {tag:"Form X",title:"Principal employer & contractor registration",d:"Registers a principal employer's establishment and declares its contractors, per paragraph 27(1)."},
+  {tag:"Form XI",title:"Contractor's recovery statement",d:"A contractor's statement of recoveries made from contract workers, per paragraph 27(3)."},
+  {tag:"Form XII",title:"Monthly abstract by principal employer",d:"Aggregates contractor recoveries and employer contributions each month, per paragraph 27(4)."}
+];
+
+const dashboard = document.getElementById('dashboard');
+const detail = document.getElementById('detail');
+const chapterGrid = document.getElementById('chapterGrid');
+const searchBox = document.getElementById('searchBox');
+
+function renderDashboard(filter){
+  const f = (filter||"").trim().toLowerCase();
+  chapterGrid.innerHTML = "";
+  let any = false;
+
+  DATA.forEach(ch=>{
+    const hay = (ch.title+" "+ch.summary+" "+ch.rules.map(r=>r.t+" "+r.d).join(" ")).toLowerCase();
+    if(f && !hay.includes(f)) return;
+    any = true;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.tabIndex = 0;
+    card.setAttribute('role','button');
+    card.innerHTML = `
+      <span class="arrow">›</span>
+      <span class="num">CHAPTER ${ch.roman}</span>
+      <h3>${ch.title}</h3>
+      <p>${ch.summary}</p>
+      <div class="meta"><span>${ch.rules.length} paragraph${ch.rules.length>1?'s':''}</span><span>§${ch.rules[0].n}–${ch.rules[ch.rules.length-1].n}</span></div>
+    `;
+    card.addEventListener('click',()=>openChapter(ch.id));
+    card.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openChapter(ch.id);} });
+    chapterGrid.appendChild(card);
+  });
+
+  // Forms & Annexure card
+  const formsHay = ("annexure forms schedules "+FORMS.map(x=>x.title+" "+x.d).join(" ")).toLowerCase();
+  if(!f || formsHay.includes(f)){
+    any = true;
+    const card = document.createElement('div');
+    card.className = 'card forms-card';
+    card.tabIndex = 0;
+    card.setAttribute('role','button');
+    card.innerHTML = `
+      <span class="arrow">›</span>
+      <span class="num">ANNEXURE &amp; FORMS</span>
+      <h3>Forms I – XII</h3>
+      <p>The prescribed forms and annexure used for applications, registrations, returns and monthly filings referenced throughout the Scheme.</p>
+      <div class="meta"><span>12 forms</span><span>+ annexure</span></div>
+    `;
+    card.addEventListener('click',()=>openForms());
+    card.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openForms();} });
+    chapterGrid.appendChild(card);
+  }
+
+  if(!any){
+    chapterGrid.innerHTML = `<div class="empty-state">No sections match "${filter}". Try a different word.</div>`;
+  }
+}
+
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function openChapter(id){
+  const ch = DATA.find(c=>c.id===id);
+  detail.innerHTML = `
+    <button class="backlink">&larr; All sections</button>
+    <div class="detail-head">
+      <div class="num">Chapter ${ch.roman}</div>
+      <h2>${ch.title}</h2>
+      <p class="lede">${ch.summary}</p>
+      <div class="stat-row">
+        <div class="stat"><b>${ch.rules.length}</b> paragraphs</div>
+        <div class="stat"><b>§${ch.rules[0].n}–${ch.rules[ch.rules.length-1].n}</b> range</div>
+      </div>
+    </div>
+    <div class="rule-list" id="ruleList"></div>
+  `;
+  detail.querySelector('.backlink').addEventListener('click',()=>showView('dashboard'));
+  const list = detail.querySelector('#ruleList');
+  ch.rules.forEach(r=>{
+    const row = document.createElement('div');
+    row.className = 'rule';
+    row.innerHTML = `
+      <div class="rule-head">
+        <span class="rnum">§${r.n}</span>
+        <h4>${r.t}</h4>
+        <span class="chev">›</span>
+      </div>
+      <div class="rule-body"><p>${r.d}</p></div>
+    `;
+    row.querySelector('.rule-head').addEventListener('click',()=>row.classList.toggle('open'));
+    list.appendChild(row);
+  });
+  showView('detail');
+}
+
+function openForms(){
+  detail.innerHTML = `
+    <button class="backlink">&larr; All sections</button>
+    <div class="detail-head">
+      <div class="num">Annexure &amp; Forms</div>
+      <h2>Forms I – XII</h2>
+      <p class="lede">Every paragraph in the Scheme that requires an application, registration, return or filing points to one of these forms. Together they are the paperwork layer that makes the Scheme operational.</p>
+    </div>
+    <div class="forms-grid" id="formsGrid"></div>
+  `;
+  detail.querySelector('.backlink').addEventListener('click',()=>showView('dashboard'));
+  const grid = detail.querySelector('#formsGrid');
+  FORMS.forEach(f=>{
+    const card = document.createElement('div');
+    card.className = 'form-card';
+    card.innerHTML = `<div class="ftag">${f.tag.toUpperCase()}</div><h4>${f.title}</h4><p>${f.d}</p>`;
+    grid.appendChild(card);
+  });
+  showView('detail');
+}
+
+searchBox.addEventListener('input', e=>{
+  if(!document.getElementById('dashboard').classList.contains('active')) showView('dashboard');
+  renderDashboard(e.target.value);
+});
+
+renderDashboard("");
+</script>
+</body>
+</html>
